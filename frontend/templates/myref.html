@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+  <title>MyRef</title>
+
+
+  <!--Animated CSS-->
+  <link rel="stylesheet" type="../text/css" href="../css/animate.min.css">
+
+  <!-- Bootstrap -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet">
+  <!--Bootstrap Carousel-->
+  <link type="../text/css" rel="stylesheet" href="../css/carousel.css" />
+
+  <link rel="stylesheet" href="../css/isotope/style.css">
+
+  <!--Main Stylesheet-->
+  <link href="../css/style.css" rel="stylesheet">
+  <!--Responsive Framework-->
+  <link href="../css/responsive.css" rel="stylesheet">
+  <link href="../node_modules/animate.css/animate.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+
+</head>
+
+<body>
+  <nav class="include" include-html="./nav.html"></nav>
+  <div class="container">
+    <!--재고 목록-->
+    <div class="list_header">
+      <div style="float: left;">
+        <div class="event_header text-left"><img src="../img/jaego.png" style="width:280px;">
+        </div>
+      </div>
+      <!-- Modal Start -->
+      <div style="float: right; margin-top: 50px; margin-left: 10px;">
+        <p><a id="modal_btn" class="modal_btn" href="#ex7"><img src="../img/plus.png"></a></p>
+        <div id="ex7" class="modal" style="max-width: 1000px; ">
+          <img src="../img/add_ingre.png" style="width: 200px;">
+          <!-- Input -->
+          <div id="input-Box" class="row">
+            <!-- search -->
+            <div class="searchbox col-lg-4 col-md-4 col-sm-4 col-xs-4" style="
+            overflow: scroll;
+            height: 300px;
+        ">
+              <input onkeyup="filter()" type="text" id="modal_input_val" placeholder="재료를 검색하세요">
+
+              <div id="search_list"></div>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+              <div>유통기한</div>
+              <div id="calendarForm"></div>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+              <select id="inputed_amount" style="font-size:180%; float: right">
+                <option value="" selected disabled hidden>==수량 선택==</option>
+                <option value="amount-many">많음</option>
+                <option value="amount-soso">보통</option>
+                <option value="amount-lit">적음</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer" id="modal-footer">
+            <button type="button" onclick="addStockData()" class="modal_add_btn"
+              style="border: none; background-color: transparent; margin-top: 40px;"><img src="../img/add_btn.png"
+                style="width: 90px;"></button>
+            <button type="button" class="modal_close_btn"
+              style="border: none; background-color: transparent; margin-top: 40px;"><img src="../img/close_btn.png"
+                style="width: 90px;"></button>
+          </div>
+        </div>
+      </div>
+      <div style="float: right;">
+        <button style="border: none; background-color: transparent; margin-top: 40px;" onclick="sortListByDate()"><img
+            src="../img/expir.png"></button>
+      </div>
+      <div style="float: right">
+        <button style="border: none; background-color: transparent; margin-top: 40px; margin-bottom: 10px;"
+          onclick="sortListByName()"><img src="../img/namesoon.png"></button>
+      </div>
+    </div>
+    <!-- Json List -->
+    <ul id="stock_list"></ul>
+  </div>
+
+  <footer class="include" include-html="./footer.html"></footer>
+
+
+  <!-- Script -->
+  <script src="../js/jquery-1.12.3.min.js"></script>
+  <script src="../js/includeHTML.js"></script>
+  <script src="../js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+  <script>includeHTML();</script>
+
+  <script>
+    includeHTML();
+    function isLogin() {
+      if (!localStorage.getItem('token')) {
+        window.location.href = "login.html";
+      }
+      console.log(localStorage.getItem('token'))
+    }
+    isLogin();
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_pk')
+      window.location.href = "login.html";
+      // console.log(localStorage.getItem('token'))
+    }
+
+    $(function () {
+      let loaded = false;
+      $('body').on('DOMNodeInserted', '#logout', function () {
+        if (!loaded) {
+          loaded = true;
+          logout();
+        }
+      })
+    });
+
+  </script>
+  <!-- Modal jQuery -->
+  <script>
+    $('a[href="#ex7"]').click(function (event) {
+      event.preventDefault();
+
+      $(this).modal({
+        fadeDuration: 250
+      });
+    });
+    //Close btn in Modal
+    $(".modal_close_btn").on('click', $.modal.close)
+
+    //<!-- get item -->
+    var addId;
+    var addName;
+    var addAmount;
+    var addExp;
+
+    var modal_xhr = new XMLHttpRequest();
+    modal_xhr.open("GET", "../data/ingredient.json");
+    modal_xhr.send();
+    modal_xhr.onreadystatechange = function () {
+      if (modal_xhr.readyState !== XMLHttpRequest.DONE) return;
+      if (modal_xhr.status === 200) {
+        //console.log(modal_xhr.responseText);
+        // Deserializing (String → Object)
+        responseObject = JSON.parse(modal_xhr.responseText);
+        // JSON → HTML String
+        var count = 0;
+        let newContent = '';
+        responseObject.forEach((responseObject) => {
+
+          newContent += `
+                        <div class="item" >
+                            <a class="name" href="#" id="getName">${responseObject.name}</a>
+                        </div>`;
+        });
+        //console.log(newContent);
+        document.getElementById("search_list").innerHTML = newContent;
+      } else {
+        console.log(`[${modal_xhr.status}] : ${modal_xhr.statusText}`);
+      }
+    };
+
+
+    //<!-- Search -->
+    function filter() {
+      var value, name, item, i;
+
+
+      value = document.getElementById("modal_input_val").value.toUpperCase();
+      item = document.getElementsByClassName("item");
+      for (i = 0; i < item.length; i++) {
+        name = item[i].getElementsByClassName("name");
+        if (name[0].innerHTML.toUpperCase().indexOf(value) > -1) {
+          item[i].style.display = "flex";
+        } else {
+          item[i].style.display = "none";
+        }
+      }
+    }
+
+    //이름 가져오기
+    $(document).on("click", "#getName", function () {
+      addName = $(this).text();
+      console.log(addName);
+    });
+
+    $("#inputed_amount").change(onSelectChange);
+    function onSelectChange() {
+      var selected = $("#inputed_amount option:selected");
+      if (selected.val() != 0) {
+        addAmount = selected.text();
+      }
+      //console.log(addAmount);
+    }
+
+    // 달력
+    $(function () {
+      calendarMaker($("#calendarForm"), new Date());
+    });
+
+    var nowDate = new Date();
+    function calendarMaker(target, date) {
+      if (date == null || date == undefined) {
+        date = new Date();
+      }
+      nowDate = date;
+      if ($(target).length > 0) {
+        var year = nowDate.getFullYear();
+        var month = nowDate.getMonth() + 1;
+        $(target).empty().append(assembly(year, month));
+      } else {
+        console.error("custom_calendar Target is empty!!!");
+        return;
+      }
+
+      var thisMonth = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+      var thisLastDay = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 0);
+
+
+      var tag = "<tr>";
+      var cnt = 0;
+      //빈 공백 만들어주기
+      for (i = 0; i < thisMonth.getDay(); i++) {
+        tag += "<td></td>";
+        cnt++;
+      }
+
+      //날짜 채우기
+      for (i = 1; i <= thisLastDay.getDate(); i++) {
+        if (cnt % 7 == 0) { tag += "<tr>"; }
+
+        tag += "<td>" + i + "</td>";
+        cnt++;
+        if (cnt % 7 == 0) {
+          tag += "</tr>";
+        }
+      }
+      $(target).find("#custom_set_date").append(tag);
+      calMoveEvtFn();
+
+      function assembly(year, month) {
+        var calendar_html_code =
+          "<table class='custom_calendar_table'>" +
+          "<colgroup>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "<col style='width:81px'/>" +
+          "</colgroup>" +
+          "<thead class='cal_date'>" +
+          "<th><button type='button' class='prev'><</button></th>" +
+          "<th colspan='5'><p><span>" + year + "</span>년 <span>" + month + "</span>월</p></th>" +
+          "<th><button type='button' class='next'>></button></th>" +
+          "</thead>" +
+          "<thead  class='cal_week'>" +
+          "<th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>" +
+          "</thead>" +
+          "<tbody id='custom_set_date'>" +
+          "</tbody>" +
+          "</table>";
+        return calendar_html_code;
+      }
+
+      function calMoveEvtFn() {
+        //전달 클릭
+        addExp = moment(nowDate).format('YYYY-MM-DD');
+        $(".custom_calendar_table").on("click", ".prev", function () {
+          nowDate = new Date(nowDate.getFullYear(), nowDate.getMonth() - 1, nowDate.getDate());
+          addExp = moment(nowDate).format('YYYY-MM-DD');
+          console.log(addExp);
+          calendarMaker($(target), nowDate);
+        });
+        //다음날 클릭
+        $(".custom_calendar_table").on("click", ".next", function () {
+          nowDate = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, nowDate.getDate());
+          addExp = moment(nowDate).format('YYYY-MM-DD');
+          console.log(addExp);
+          calendarMaker($(target), nowDate);
+        });
+        //일자 선택 클릭
+        $(".custom_calendar_table").on("click", "td", function () {
+          $(".custom_calendar_table .select_day").removeClass("select_day");
+          $(this).removeClass("select_day").addClass("select_day");
+          addExp = new Date(nowDate.getFullYear(), nowDate.getMonth(), document.getElementsByClassName('select_day')[0].textContent);
+          addExp = moment(addExp).format('YYYY-MM-DD');
+          //console.log( document.getElementsByClassName('select_day')[0].textContent )
+          //console.log(nowDate)
+          //addExp=nowDate;
+          console.log(addExp);
+        });
+      }
+    }
+    //날짜 가져오기
+    $(document).on("click", "#getName", function () {
+      addExp = $(this).text();
+      //console.log(addName);
+    });
+
+    //get Id
+    function getingreId() {
+      var idxhr = new XMLHttpRequest();
+      idxhr.open("GET", "../data/ingredient.json")
+      idxhr.send();
+      idxhr.onreadystatechange = function () {
+        if (idxhr.readyState !== XMLHttpRequest.DONE) return;
+        if (idxhr.status === 200) {
+          console.log("success?");
+          idObject = JSON.parse(idxhr.responseText);
+          idObject.forEach((idObject) => {
+            if (idObject.name == addName) {
+              localStorage.setItem('ingId', idObject.id);
+            }
+          });
+        }
+      }
+    }
+
+    //console.log(addId);
+
+    function addStockData() {
+      getingreId();
+      var data = {};
+      //data.name = addName;
+      data.amount = addAmount;
+      data.expiration_date = addExp;
+      data.user_id = localStorage.getItem('user_pk');
+      data.ingredient_id = localStorage.getItem('ingId');
+      localStorage.removeItem('ingId');
+
+      const addxhr = new XMLHttpRequest();
+
+      addxhr.open('POST', 'http:///18.212.120.246:8000/stock/');
+
+      addxhr.setRequestHeader('Content-type', 'application/json');
+      addxhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+      addxhr.send(JSON.stringify(data));
+      window.location.href = "myref.html";
+      //addxhr.send(data);
+    }
+  </script>
+
+  <script>
+    {
+      var idxhr = new XMLHttpRequest();
+      idxhr.open("GET", "../data/ingredient.json")
+      idxhr.send();
+      idxhr.onreadystatechange = function () {
+        if (idxhr.readyState !== XMLHttpRequest.DONE) return;
+        if (idxhr.status === 200) {
+          localStorage.setItem('ingredient', idxhr.responseText);
+        }
+      }
+    }
+
+    function getIngredientName(ingId) {
+      let myIngreName = "";
+      let ing = localStorage.getItem('ingredient');
+      let idObject = JSON.parse(ing);
+      idObject.forEach((idObject) => {
+        if (idObject.id == ingId) {
+          myIngreName = idObject.name;
+        }
+      });
+      return myIngreName;
+    }
+  </script>
+
+
+  <!-- Read and GET Json -->
+  <script>
+    var myIngreName, myIngreId;
+    function getingreName(myIngreId) {
+      var idxhr = new XMLHttpRequest();
+      idxhr.open("GET", "../data/ingredient.json")
+      idxhr.send();
+      idxhr.onreadystatechange = function () {
+        if (idxhr.readyState !== XMLHttpRequest.DONE) return;
+        if (idxhr.status === 200) {
+          //console.log("success");
+          idObject = JSON.parse(idxhr.responseText);
+          //console.log(idObject);
+          idObject.forEach((idObject) => {
+            if (idObject.id == myIngreId) {
+              myIngreName = idObject.name;
+              //console.log(myIngreName);
+            }
+          });
+        }
+        //console.log("name=");
+        console.log(new Date().toISOString(), myIngreName);
+        return myIngreName;
+      }
+    }
+
+    // Stock List
+    var stockList = function () {
+      // XMLHttpRequest 객체의 생성
+      var xhr = new XMLHttpRequest();
+
+      // 비동기 방식으로 Request를 오픈한다
+
+      xhr.open("GET", "http:///18.212.120.246:8000/stock/");
+
+      xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+      // Request를 전송한다
+      xhr.send();
+
+      xhr.onreadystatechange = function () {
+        // 서버 응답 완료 && 정상 응답
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+        if (xhr.status === 200) {
+          // Deserializing (String → Object)
+          stockresponseObject = JSON.parse(xhr.responseText);
+          //X버튼 크기 줄이기, 글씨 키우기, select박스 크기 키우기
+          //console.log(stockresponseObject)
+          // JSON → HTML String
+          let newContent = '';
+          // 
+          stockresponseObject.forEach((stockresponseObject) => {
+            console.log("재료 아이디 ", stockresponseObject.ingredient_id);
+            // var realIngreName=getingreName(stockresponseObject.ingredient_id);
+            var realIngreName = getIngredientName(stockresponseObject.ingredient_id);
+            console.log(realIngreName);
+            //console.log(realIngreName)
+            newContent += '<li>\
+                    <div id="stockdiv" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 list_board">\
+                          <div class="col-md-2" style="float: left"><img src="../img/ingredient.png" style="width:70px"></div>\
+                          <div id="stock_food" class="col-md-2" style="float: left" >'+ realIngreName + '</div>\
+                          <div id="stock_exp"class="col-md-2" style="float: left">'+ stockresponseObject.expiration_date + '</div>\
+                          <div id="stock_amount" class="col-md-1" id="amountOutput" style="float: left">'+ stockresponseObject.amount + '</div>\
+                          <div class="col-md-2" style="float: left">\
+                              <select id="change_amount">\
+                                <option value="" selected disabled hidden>==수량변경==</option>\
+                                <option value="많음">많음</option>\
+                                <option value="보통">보통</option>\
+                                <option value="적음">적음</option>\
+                              </select>\
+                          </div>\
+                          <div class="col-md-1" style="float: left; display:none">'+ stockresponseObject.id + '</div>\
+                          <button id='+ stockresponseObject.ingredient_id + ' onclick=orderStock(this.id) value=' + stockresponseObject.ingredient_id + ' class="col-lg-1 col-md-1 col-sm-1 col-xs-1 order_btn">\
+                              주문하기\
+                          </button>\
+                          <div id="btnDel" class="col-lg-1 col-md-1 col-sm-1 col-xs-1 ">\
+                              <button id="deleteBtn" type="button" class="delbtn btn-danger" >X</button> \
+                          </div>';
+          });
+          newContent += "</div></li>";
+
+          document.getElementById("stock_list").innerHTML = newContent;
+        } else {
+          console.log(`[${xhr.status}] : ${xhr.statusText}`);
+        }
+      }
+    }
+    stockList();
+
+
+    // Change Stock Amount
+    $(document).on("change", "#change_amount", function () {
+      var amount = $(this).select().val();
+      var expiration_date = $(this).parent().prev().prev().text();
+      var id = $(this).parent().next().text();
+      var ingredient_id = $(this).parent().next().next().val();
+
+      var data = {};
+      data.id = id;
+      data.amount = amount;
+      data.expiration_date = expiration_date;
+      data.user_id = localStorage.getItem('user_pk');
+      data.ingredient_id = ingredient_id;
+
+      var jason_data = JSON.stringify(data);
+      console.log("json-data", jason_data);
+
+      var xhr = new XMLHttpRequest();
+      // 비동기 방식으로 Request를 오픈한다
+
+      var url = 'http:///18.212.120.246:8000/stock/' + id + '/';
+
+      console.log(url);
+      xhr.open("PUT", url);
+      xhr.setRequestHeader('Content-type', 'application/json');
+      xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+
+      // Request를 전송한다
+      xhr.send(jason_data);
+
+      xhr.onreadystatechange = function (e) {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+        if (xhr.status === 201) {
+          stockList();
+        } else {
+          console.log("Error!");
+        }
+      };
+
+    });
+
+
+
+    //Delete Btn in List
+    $(document).on("click", "#deleteBtn", function () {
+      var id = $(this).parent().prev().prev().text();
+      var xhr = new XMLHttpRequest();
+
+
+      var url = 'http:///18.212.120.246:8000/stock/' + id;
+
+      xhr.open("DELETE", url);
+      xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+      console.log("url", url);
+
+      // Request를 전송한다
+      xhr.send();
+
+      xhr.onreadystatechange = function (e) {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+        if (xhr.status === 204) {
+          stockList();
+        } else {
+          console.log("안 지워짐!");
+        }
+      };
+    });
+
+
+
+    // Order Stock
+    function orderStock(that) {
+      var stockName;
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'http://localhost:5502/data/ingredient_euckr.json');
+      xhr.send();
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+        if (xhr.status === 200) {
+          var responseObject = JSON.parse(xhr.responseText);
+          stockName = responseObject[that];
+          var url = 'https://www.kurly.com/shop/goods/goods_search.php?searched=Y&sword=' + stockName;
+
+          var ret = window.open(url);
+        } else {
+          console.log("Error!");
+        }
+      }
+
+    }
+  </script>
+  <script>
+    const de_xhr = new XMLHttpRequest();
+
+    de_xhr.open('POST', 'http:///18.212.120.246:8000/stock/');
+
+    de_xhr.setRequestHeader('Content-type', 'application/json');
+
+    function add_stock(modal_input_val, password1, inputed_amount) {
+      de_xhr.send(JSON.stringify({ ingredient_id: modal_input_val, expiration_date: inputed_amount, amount: password2 }));
+
+      de_xhr.onreadystatechange = function (e) {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+      };
+    }
+
+    //Delete Btn in List
+    function delete_stock() {
+      JSON.splice(this, 1);
+      // $(this).parent().parent().parent().remove();
+      alert("hi");
+      return false;
+    };
+    // For Test
+    encodedStockName = escape(encodeURIComponent("한글"));
+    console.log(encodedStockName);
+  </script>
+  <!-- Sort By Date -->
+  <script>
+    function sortListByDate() {
+      var list, i, switching, b, shouldSwitch, dir, switchcount = 0;
+      list = document.getElementById("stock_list");
+      switching = true;
+      dir = "asc";
+      while (switching) {
+        switching = false;
+        b = list.getElementsByTagName("LI");
+        for (i = 0; i < (b.length - 1); i++) {
+          shouldSwitch = false;
+          let curr = b[i].innerHTML.substr(b[i].innerHTML.indexOf('stock_exp')).toLowerCase();
+          let next = b[i + 1].innerHTML.substr(b[i + 1].innerHTML.indexOf('stock_exp')).toLowerCase();
+          if (dir == "asc") {
+
+            if (curr > next) {
+              shouldSwitch = true;
+              break;
+            }
+          } else if (dir == "desc") {
+            if (curr < next) {
+              shouldSwitch = true;
+              break;
+            }
+          }
+        }
+        if (shouldSwitch) {
+          b[i].parentNode.insertBefore(b[i + 1], b[i]);
+          switching = true;
+          switchcount++;
+        } else {
+          if (switchcount == 0 && dir == "asc") {
+            dir = "desc";
+            switching = true;
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Sort By Name -->
+  <script>
+    function sortListByName() {
+      var list, i, switching, b, shouldSwitch, dir, switchcount = 0;
+      list = document.getElementById("stock_list");
+      switching = true;
+      dir = "asc";
+      while (switching) {
+        switching = false;
+        b = list.getElementsByTagName("LI");
+        for (i = 0; i < (b.length - 1); i++) {
+          shouldSwitch = false;
+          if (dir == "asc") {
+            if (b[i].innerHTML.toLowerCase() > b[i + 1].innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          } else if (dir == "desc") {
+            if (b[i].innerHTML.toLowerCase() < b[i + 1].innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          }
+        }
+        if (shouldSwitch) {
+          b[i].parentNode.insertBefore(b[i + 1], b[i]);
+          switching = true;
+          switchcount++;
+        } else {
+          if (switchcount == 0 && dir == "asc") {
+            dir = "desc";
+            switching = true;
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- <script>
+            $(".modal_add_btn").on('click', $.addStock);
+            function addStock(){
+                var getFood=document.getElementById('#inputed_food').val();
+                var getExp=document.getElementById('#inputed_exp').val();
+                var selected = $("#inputed_amount option:selected").text;
+                var addForm={
+                    "food":getFood,
+                    "exp":getExp,
+                    "amount":selected
+                };
+                fs.writeFileSync('../data/test-list.json',JSON.stringify(addForm));
+                $.modal.close();
+            }
+        </script> -->
+
+
+</body>
+
+
+
+
+</html>

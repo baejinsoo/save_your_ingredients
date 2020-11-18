@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  
+  <!--Animated CSS-->
+  <link rel="stylesheet" type="../text/css" href="../css/animate.min.css" />
+
+  <!-- Bootstrap -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet" />
+  <!--Bootstrap Carousel-->
+  <link type="../text/css" rel="stylesheet" href="../css/carousel.css" />
+
+  <link rel="stylesheet" href="../css/isotope/style.css" />
+
+  <!--Main Stylesheet-->
+  <link href="../css/style.css" rel="stylesheet" />
+  <!--Responsive Framework-->
+  <link href="../css/responsive.css" rel="stylesheet" />
+
+  <!-- 버튼 -->
+  <link href="../css/login.css" rel="stylesheet">
+  <script src="../js/jquery-1.12.3.min.js"></script>
+
+  <script src="../js/includeHTML.js"></script>
+
+  <style>
+    table {
+        width: 40%;
+        border-top: 1px solid #9b9b9b;
+        border-collapse: collapse;
+        font-size: large;
+        margin: 0px 20px 10px;
+        padding: 10px;
+        background-color: white;
+        border-radius: 30px;
+        
+    }
+    td {
+        border-bottom: 1px solid #9b9b9b;
+        padding: 10px;
+      }
+  </style>
+  
+</head>
+<body>
+    <nav class="include" include-html="./nav.html"></nav>
+    <div class="container" style="background-color: rgba(255, 254, 254, 0.445); border-radius: 30px; margin-top: 30px;">
+        <div id="detail_list" style="text-align: center;"></div>
+    </div>
+    
+    <footer class="include" include-html="./footer.html"></footer>
+
+    <script>
+        // XMLHttpRequest 객체의 생성
+        var xhr = new XMLHttpRequest();
+        var para = document.location.href.split("?");
+        console.log(para);
+        // 비동기 방식으로 Request를 오픈한다
+        var url = 'https://save-your-ingredient.s3.amazonaws.com/recipes/1034416.json';
+        xhr.open('GET', url);
+        // Request를 전송한다
+        xhr.send();
+  
+        xhr.onreadystatechange = function () {
+          // 서버 응답 완료 && 정상 응답
+          if (xhr.readyState !== XMLHttpRequest.DONE) return;
+  
+          if (xhr.status === 200) {
+            console.log(xhr.responseText);
+  
+            // Deserializing (String → Object)
+            responseObject = JSON.parse(xhr.responseText);
+            //style="font-family: Nanum Gothic"
+            // JSON → HTML String
+            let newContent ='';
+            newContent+=`
+            <div style="margin: 40px ">
+            <h1 style="font-family:Jeju Gothic">${responseObject.name}</h1>
+            </div>
+            <img src="${responseObject.thumbnail}" style="width: 700px">
+            <div style="margin:20px 20px"><h1>[재료]</h1></div>
+            <hr style="color:#000">
+            <div id="detail_table">
+                <div>
+                <table>
+                    <tr>
+                </div>
+            `;
+            responseObject.ingre_list.forEach((ingre_list) => {
+              newContent += `
+                    <tr>
+                        <td>${ingre_list.ingre_name}</td>
+                        <td>${ingre_list.ingre_count} ${ingre_list.ingre_unit}</td>
+                    </tr>`;
+            });
+
+            newContent += `
+                </table>
+                </div>
+                <h2 style="margin:20px">[조리 방법]</h2>
+                <div id="recipe_way">`
+            var recipeArr= new Array;
+            var i=0;
+            var a=1;
+            var b=0;
+            responseObject.recipe.forEach((recipe) => {
+                recipeArr[i]="<h3>"+recipe+"<h3>";
+                i=i+2;
+                });
+            responseObject.recipe_img.forEach((recipe_img) => {
+                recipeArr[a]="<img src=\""+recipe_img+"\">";
+                a=a+2;
+            });
+            console.log(recipeArr)
+            recipeArr.forEach(function(element){
+                    newContent += `
+                    <div style="margin: 0px 20px 10px">
+                        ${recipeArr[b]}
+                    </div>
+                        `;
+                    b++;
+            });
+            
+            
+            
+  
+            document.getElementById("detail_list").innerHTML = newContent;
+          } else {
+            console.log(`[${xhr.status}] : ${xhr.statusText}`);
+          }
+        };
+    </script>
+    <script>
+        includeHTML();
+      </script>
+</body>
+</html>

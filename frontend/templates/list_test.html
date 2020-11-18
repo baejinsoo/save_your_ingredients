@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+  <title>GreenFair</title>
+
+  <!--    Google Fonts-->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet"
+    type="../text/css" />
+
+  <!--Fontawesom-->
+  <link rel="stylesheet" href="../css/font-awesome.min.css" />
+
+  <!--Animated CSS-->
+  <link rel="stylesheet" type="../text/css" href="../css/animate.min.css" />
+
+  <!-- Bootstrap -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet" />
+  <!--Bootstrap Carousel-->
+  <link type="../text/css" rel="stylesheet" href="../css/carousel.css" />
+
+  <link rel="stylesheet" href="../css/isotope/style.css" />
+
+  <!--Main Stylesheet-->
+  <link href="../css/style.css" rel="stylesheet" />
+  <!--Responsive Framework-->
+  <link href="../css/responsive.css" rel="stylesheet" />
+
+  <!-- 버튼 -->
+  <link href="../css/login.css" rel="stylesheet">
+  <script src="../js/jquery-1.12.3.min.js"></script>
+
+  <script src="../js/includeHTML.js"></script>
+</head>
+<body>
+    <h2>detile Hello</h2>
+    <div id="detail_list"></div>
+
+    <script>
+        // XMLHttpRequest 객체의 생성
+        var xhr = new XMLHttpRequest();
+  
+        // 비동기 방식으로 Request를 오픈한다
+        xhr.open("GET", "https://save-your-ingredient.s3.amazonaws.com/recipes/1002689.json");
+        // Request를 전송한다
+        xhr.send();
+  
+        xhr.onreadystatechange = function () {
+          // 서버 응답 완료 && 정상 응답
+          if (xhr.readyState !== XMLHttpRequest.DONE) return;
+  
+          if (xhr.status === 200) {
+            console.log(xhr.responseText);
+  
+            // Deserializing (String → Object)
+            responseObject = JSON.parse(xhr.responseText);
+  
+            // JSON → HTML String
+            let newContent ='';
+            newContent+=`
+            <h2>${responseObject.name}</h2>
+            <img src="${responseObject.thumbnail}">
+
+            <h2>재료</h2>
+            <table style="border: 4px #000;">
+            `;
+            responseObject.ingre_list.forEach((ingre_list) => {
+              newContent += `
+                    <tr>
+                        <td>${ingre_list.ingre_name}</td>
+                        <td>${ingre_list.ingre_count} ${ingre_list.ingre_unit}</td>
+                    </tr>`;
+            });
+
+            newContent += `
+                </table>
+
+                <h2>조리 방법</h2>
+                <div>
+                    ${responseObject.recipe}
+                </div>
+
+               `;
+  
+            document.getElementById("detail_list").innerHTML = newContent;
+          } else {
+            console.log(`[${xhr.status}] : ${xhr.statusText}`);
+          }
+        };
+    </script>
+</body>
+</html>

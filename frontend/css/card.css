@@ -1,0 +1,15 @@
+.common_sp_list_li {
+    list-style: none;
+    width: 282px;
+    padding: 0;
+    margin: 0 12px 40px 0;
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+}
+
+.common_sp_thumb {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+}

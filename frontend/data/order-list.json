@@ -1,0 +1,33 @@
+
+{
+    "user_name":"돌리",
+    "user_rec":
+    [
+        {
+            "food":"진수국밥",
+            "link":"www.naver.com"
+        },
+        {
+            "food":"동재 고스트짬뽕",
+            "link":"www.naver.com"
+        },{
+            "food":"유라 소주",
+            "link":"www.naver.com"
+        },{
+            "food":"이민용의 뚝배기",
+            "link":"www.naver.com"
+        },{
+            "food":"여찬이 듣고있어?",
+            "link":"www.naver.com"
+        },{
+            "food":"찬영 자고있는거아니지?",
+            "link":"www.naver.com"
+        },{
+            "food":"대답은 반장이해야지",
+            "link":"www.naver.com"
+        },{
+            "food":"귀염귀염열매",
+            "link":"www.naver.com"
+        }
+    ]
+}

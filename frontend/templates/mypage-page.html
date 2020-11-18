@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>GreenFair</title>
+
+    <!--    Google Fonts-->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet'
+        type='../text/css'>
+
+    <!--Fontawesom-->
+    <link rel="stylesheet" href="../css/font-awesome.min.css">
+
+    <!--Animated CSS-->
+    <link rel="stylesheet" type="../text/css" href="../css/animate.min.css">
+
+    <!-- Bootstrap -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <!--Bootstrap Carousel-->
+    <link type="../text/css" rel="stylesheet" href="../css/carousel.css" />
+
+    <link rel="stylesheet" href="../css/isotope/style.css">
+
+    <!--Main Stylesheet-->
+    <link href="../css/style.css" rel="stylesheet">
+    <!--Responsive Framework-->
+    <link href="../css/responsive.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300&display=swap" rel="stylesheet">
+    <script src="../js/includeHTML.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro">
+    <style>
+        body {
+            font-family: 'Crimson Pro', serif;
+        }
+
+        .btn-storage {
+            border: 1px solid #ffd518;
+            background-color: #ffd518;
+            display: block;
+            overflow: hidden;
+            width: 100%;
+            height: 30px;
+            border-radius: 0 0 6px 6px;
+            font-size: 13px;
+            text-align: center;
+            position: relative;
+            bottom: 0px;
+
+        }
+
+        .recipe-card {
+            font-family: 'Noto Sans KR', sans-serif;
+            border-radius: 6px;
+            width: 45%;
+            height: 385px;
+            margin: 0 15px 20px 10px;
+            float: left;
+            border: 3px solid #ffd518;
+
+        }
+
+        .mypage_top {
+            width: 100%;
+            padding: 30px 0;
+            background-color: #f7f7f7;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // mypage 최근에 해 먹은 레시피 뿌려주기
+        var MyPage = function () {
+            var xhr = new XMLHttpRequest();
+            var url = 'http:///18.212.120.246:8000/user-detail/';
+            xhr.open('GET', url);
+            xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        let loadedJSON = JSON.parse(xhr.responseText);
+                        var experienceRecipeList = [];
+                        for (var i = 0; i < loadedJSON.experience_recipes.length; i++) {
+                            experienceRecipeList.push(loadedJSON.experience_recipes[i]);
+                        }
+                        $.each(experienceRecipeList, function (index, recipeNumber) {
+                            var xhr2 = new XMLHttpRequest();
+                            var url = 'https://save-your-ingredient.s3.amazonaws.com/recipes/' + recipeNumber.reci_id + '.json';
+                            xhr2.open('GET', url);
+                            xhr2.send();
+
+                            xhr2.onreadystatechange = function () {
+                                if (xhr2.readyState === XMLHttpRequest.DONE) {
+                                    if (xhr2.status === 200) {
+                                        let loadedJSON = JSON.parse(xhr2.responseText);
+                                        var html = "";
+                                        html +=
+                                            '<div> \
+                        <div class="blog_news" > \
+                          <div class="recipe-card" style="width:22%; margin: 0 27px 20px 10px;" > \
+                            <div class="blog_img"> \
+                              <a href="detail_recipe.html""><img src="' + loadedJSON.thumbnail + '" alt=""/></a> \
+                            </div> \
+                            <div class="blog_content" style="text-align: left;"> \
+                                <a href="detail_recipe.html""><h3 id="plz">' + loadedJSON.name + '</h3></a> \
+                            </div> \
+                            <button id="'+ recipeNumber.reci_id + '" class="btn-storage" onclick=btn_click(this.id)>창고에 담기</button> \
+                          </div> \
+                        </div> \
+                      </div>';
+
+
+                                        $('#completeRecipes').append(html);
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        console.log("Error");
+                    }
+                }
+            }
+        }
+        MyPage();
+    </script>
+    <script>
+        // 창고에 담기
+        function btn_click(that) {
+            // that : reci_id
+            console.log("레시피 번호", that);
+            var data = {};
+            data.reci_id = that;
+            var json_data = JSON.stringify(data);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://18.212.120.246:8000/wish-recipe/');
+            xhr.setRequestHeader('Content-type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+            xhr.send(json_data);
+        }
+    </script>
+    <script>
+        var myGrade = function () {
+            var xhr_my = new XMLHttpRequest();
+            xhr_my.open('GET', 'http://18.212.120.246:8000/user-detail/');
+            xhr_my.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+            xhr_my.send();
+
+            xhr_my.onreadystatechange = function () {
+                if (xhr_my.readyState === XMLHttpRequest.DONE) {
+                    if (xhr_my.status === 200) {
+                        var loadedJSON = JSON.parse(xhr_my.responseText);
+                        var totalExperienceRecipe = loadedJSON.experience_recipes.length;
+                        var cookTime = 270;
+                        console.log("totaltime", cookTime, "레시피 해먹은거", totalExperienceRecipe);
+                        $("#recp").attr('data-target', totalExperienceRecipe);
+                        $("#cookTime").attr('data-target', cookTime);
+
+                        if (cookTime > 0 && cookTime < 200) {
+                            html = '<img src="/img/micro.png" style="width: 50%;"> \
+                                    <div class="counter_text"><p> 전자파JMT</p></div>';
+                            $("#thirdGrade").append(html);
+                        }
+                        if (cookTime >= 200 && cookTime < 400) {
+                            html = '<img src="/img/pot.png" style="width: 50%;"> \
+                                    <div class="counter_text"><p> 고구마호박 조리 가능</p></div>';
+                            $("#secondGrade").append(html);
+                        }
+                        if (cookTime >= 400) {
+                            html = '<img src="/img/chef.png" style="width: 50%;"> \
+                                    <div class="counter_text"><p> 백종원 뺨테이커</p></div>';
+                            $("#firstGrade").append(html);
+                        }
+
+                    }
+
+                }
+            }
+        }
+        myGrade();
+    </script>
+    <nav class="include" include-html="./nav.html"></nav>
+
+
+    <section id="blog">
+        <div class="container">
+            <div class="col-md-12 mypage_top">
+                <div class="col-md-4">
+                    <!-- todo: 등급 표기 -->
+                    <div id="firstGrade" class="counter_item text-center" style="padding-top: 30px;"></div>
+                    <div id="secondGrade" class="counter_item text-center" style="padding-top: 30px;"></div>
+                    <div id="thirdGrade" class="counter_item text-center" style="padding-top: 30px;"></div>
+
+                </div>
+
+                <div class="col-md-4">
+                    <div class="counter_item text-center">
+                        <div class="sigle_counter_item">
+                            <img src="/img/count_1.png" alt="" />
+                            <div class="counter_text">
+                                <div id="recp" class="counter" data-target="9">0</div>
+                                <p>요리한 레시피 개수</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="counter_item text-center">
+                        <div class="sigle_counter_item">
+                            <img src="/img/clock_1.png" alt="" />
+                            <div class="counter_text">
+                                <div id="cookTime" class="counter" data-target="450">0</div>
+                                <p>총 요리 시간(분)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12" style="height: 50px"></div>
+            <div class="row">
+                <div>
+                    <h3 style="padding-left: 10px"><img src="../img/latest_recipe.png"></h3>
+                    <hr />
+                </div>
+                <div id="completeRecipes">
+                </div>
+            </div>
+            <!--End of row-->
+
+        </div>
+        <!--End of container-->
+    </section>
+
+
+    <script src="../js/jquery-1.12.3.min.js"></script>
+    <!--Back To Top-->
+    <script src="../js/backtotop.js"></script>
+    <!--WOW With Animation-->
+    <script src="../js/wow.min.js"></script>
+    <!--WOW Activated-->
+    <script src="../js/countnumber.js"></script>
+    <script>
+        new WOW().init();
+    </script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- Custom JavaScript-->
+    <script src="../js/main.js"></script>
+</body>
+<script>
+    includeHTML();
+
+
+    $(function () {
+        let loaded = false;
+        $('body').on('DOMNodeInserted', '#recp', function () {
+            if (!loaded) {
+                loaded = true;
+                dispCount($('.counter'));
+            }
+        })
+    });
+
+    $(function () {
+        let loaded = false;
+        $('body').on('DOMNodeInserted', '#cookTime', function () {
+            if (!loaded) {
+                loaded = true;
+                dispCount($('.counter'));
+            }
+        })
+    })
+</script>
+
+</html>

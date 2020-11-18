@@ -1,0 +1,61 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link href="../css/login.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('../img/background_image.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="include" include-html="./nav.html"></nav>
+    <div class="section_register" style="margin-top:200px">
+        <h3 class="tit_register">회원가입</h3>
+        <div class="write_form">
+            <div class="write_view register_view">
+                <input type="text" id='id_input' name="m_id" size="20" tabindex="1" value="" placeholder="아이디를 입력해주세요">
+                <input type="password1" id='password1_input' name="password" size="20" tabindex="2"
+                    placeholder="최소 8 문자를 포함해야 합니다.">
+                <input type="password2" id='password2_input' name="password" size="20" tabindex="2"
+                    placeholder="비밀번호를 한번 더 입력해주세요">
+
+                <button class="btn_type1"
+                    onclick="login(document.getElementById('id_input').value, document.getElementById('password1_input').value, document.getElementById('password2_input').value)"><span
+                        class="txt_type">회원가입</span></button>
+            </div>
+        </div>
+        <script>
+            
+            function login(id, password1, password2){
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'http:///18.212.120.246:8000/rest-auth/registration/');
+                xhr.setRequestHeader('Content-type', 'application/json');
+                console.log(id)
+                console.log(password1)
+                xhr.send(JSON.stringify({username: id, password1: password1, password2: password2}));
+
+                xhr.onreadystatechange = function (e) {
+                    if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+                    if(xhr.status === 201) { // 201: Created
+                        window.location.href = "login.html";
+                        // var obj = JSON.parse(xhr.responseText);
+                        // console.log(obj.token)
+                        // localStorage.setItem('token', obj.token)
+                    } else {
+                        console.log("Error!")
+                        window.location.href = "registeration.html";
+
+                }
+            };
+        }
+    </script>
+
+</body>
+
+</html>

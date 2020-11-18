@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+  <title>GreenFair</title>
+
+  <!--    Google Fonts-->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet"
+    type="../text/css" />
+
+  <!--Fontawesom-->
+  <link rel="stylesheet" href="../css/font-awesome.min.css" />
+
+  <!--Animated CSS-->
+  <link rel="stylesheet" type="../text/css" href="../css/animate.min.css" />
+
+  <!-- Bootstrap -->
+  <link href="../css/bootstrap.min.css" rel="stylesheet" />
+  <!--Bootstrap Carousel-->
+  <link type="../text/css" rel="stylesheet" href="../css/carousel.css" />
+
+  <link rel="stylesheet" href="../css/isotope/style.css" />
+
+  <!--Main Stylesheet-->
+  <link href="../css/style.css" rel="stylesheet" />
+  <!--Responsive Framework-->
+  <link href="../css/responsive.css" rel="stylesheet" />
+
+  <!-- 버튼 -->
+  <link href="../css/login.css" rel="stylesheet">
+
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  <script src="../js/jquery-1.12.3.min.js"></script>
+
+  <script src="../js/includeHTML.js"></script>
+
+
+  <style>
+    .btn-storage {
+      border: 1px solid #ffd518;
+      background-color: #ffd518;
+      display: block;
+      overflow: hidden;
+      width: 100%;
+      height: 30px;
+      border-radius: 0 0 6px 6px;
+      font-size: 13px;
+      text-align: center;
+      position: relative;
+      bottom: 0px;
+    }
+
+    .recipe-card {
+      font-family: 'Noto Sans KR', sans-serif;
+
+      border-radius: 6px;
+      height: 385px;
+      margin: 0 15px 20px 10px;
+      float: left;
+      border: 3px solid #ffd518;
+    }
+
+    .more-button {
+      border: 1px solid #ffd91d;
+      background-color: #ffd91d;
+      color: black;
+      font-size: 13px;
+      padding: 5px 8px;
+      margin-right: 20px;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+  </style>
+
+
+
+</head>
+
+<body>
+
+  <script>
+    // 창고에 담기
+    function btn_click(that) {
+      // that : reci_id
+      console.log("레시피 번호", that);
+      var data = {};
+      data.reci_id = that;
+      var json_data = JSON.stringify(data);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'http:///18.212.120.246:8000/wish-recipe/');
+      xhr.setRequestHeader('Content-type', 'application/json');
+      xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+      xhr.send(json_data);
+    }
+  </script>
+
+
+  <script>
+    // 뿌려주기 
+    var Card = function (categoryOfRecipe, sizeOfRecipeArr, selector, width) {
+      var xhr = new XMLHttpRequest();
+      var url = 'http://18.212.120.246:8000/' + categoryOfRecipe + '/';
+      console.log("url", url);
+      xhr.open('GET', url);
+      xhr.setRequestHeader('Authorization', 'jwt ' + localStorage.getItem('token'));
+
+      xhr.send();
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            let loadedJSON = JSON.parse(xhr.responseText);
+            var previewRecipeStockList = [];
+            for (var i = 0; i < sizeOfRecipeArr; i++) {
+              previewRecipeStockList.push(loadedJSON.ids[i]);
+            }
+            $.each(previewRecipeStockList, function (index, recipeNumber) {
+              var xhr2 = new XMLHttpRequest();
+              var url = 'https://save-your-ingredient.s3.amazonaws.com/recipes/' + recipeNumber + '.json';
+              xhr2.open('GET', url);
+              xhr2.send();
+
+              xhr2.onreadystatechange = function () {
+                if (xhr2.readyState === XMLHttpRequest.DONE) {
+
+
+                  if (xhr2.status === 200) {
+                    let loadedJSON = JSON.parse(xhr2.responseText);
+
+                    var html = "";
+                    html +=
+                      '<div> \
+                        <div class="blog_news" > \
+                          <div class="recipe-card" style="width:'+ width + '" > \
+                            <div class="blog_img"> \
+                              <a href="detail_recipe.html"><img src="' + loadedJSON.thumbnail + '" alt=""/></a> \
+                            </div> \
+                            <div class="blog_content" style="text-align: left;"> \
+                              <a href="detail_recipe.html"><h3 id="plz">' + loadedJSON.name + '</h3></a> \
+                            </div> \
+                            <button id="'+ recipeNumber + '" class="btn-storage" onclick=btn_click(this.id)>창고에 담기</button> \
+                          </div> \
+                        </div> \
+                      </div>';
+                    $(selector).append(html);
+                  } else {
+                    console.log("error!!");
+                  }
+                }
+              }
+            });
+          } else {
+            console.log("Error");
+          }
+        }
+      }
+    }
+
+    Card('RecipeStock', 4, '#recent', '45%');
+    Card('RecipeRandom', 4, '#popular', '45%');
+
+  </script>
+  <nav class="include" include-html="./nav.html"></nav>
+
+
+
+
+
+  <section id="blog">
+    <div class="container">
+      <!-- 최근 레시피 -->
+
+      <div id="recentCardContainer" class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+        <div class="latest_blog text-left" style="margin-bottom: 10px;">
+          <img src="../img/latest_recipe.png">
+          <button id="more" class="more-button" style="float: right;">더 보기</button>
+          <script>
+            $(document).on("click", "#more", function () {
+              $('#recentCardContainer').attr('class', 'col-lg-12 col-md-12 col-sm-12 col-xs-12');
+              $('#popularCardContainer').empty();
+              $('#recent').empty();
+              Card('RecipeStock', 20, '#recent', '22%');
+              $('#more').hide();
+            });
+          </script>
+        </div>
+        <!-- latest_blog -->
+
+        <!-- 추천 레시피 -->
+        <div id="recent">
+
+        </div>
+      </div>
+      <!-- col-md-6 -->
+
+
+
+      <div id="popularCardContainer" class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+        <div class="latest_blog text-left" style="margin-bottom: 10px;">
+          <img src="../img/ingi_recipe.png">
+          <button id="moreP" class="more-button" style="float: right;">더 보기</button>
+          <script>
+            $(document).on("click", "#moreP", function () {
+              $('#popularCardContainer').attr('class', 'col-lg-12 col-md-12 col-sm-12 col-xs-12');
+              $('#recentCardContainer').empty();
+              $('#popular').empty();
+              Card('RecipeRandom', 20, '#popular', '22%');
+              $('#moreP').hide();
+            });
+          </script>
+        </div>
+        <!-- latest_blog -->
+
+
+        <div id="popular">
+
+        </div>
+      </div>
+    </div>
+    <!-- container -->
+  </section>
+  <!-- blog -->
+
+
+  <script src="../js/jquery-1.12.3.min.js"></script>
+  <!--Back To Top-->
+  <script src="../js/backtotop.js"></script>
+  <!--WOW With Animation-->
+  <script src="../js/wow.min.js"></script>
+  <!--WOW Activated-->
+  <script>
+    new WOW().init();
+  </script>
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  <script src="../js/bootstrap.min.js"></script>
+  <!-- Custom JavaScript-->
+  <script src="../js/main.js"></script>
+</body>
+<script>
+  includeHTML();
+</script>
+<script>
+  includeHTML();
+  function isLogin() {
+    if (!localStorage.getItem('token')) {
+      window.location.href = "login.html";
+    }
+    console.log(localStorage.getItem('token'))
+  }
+  isLogin();
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_pk')
+    window.location.href = "login.html";
+  }
+
+  $(function () {
+    let loaded = false;
+    $('body').on('DOMNodeInserted', '#logout', function () {
+      if (!loaded) {
+        loaded = true;
+        logout();
+      }
+    })
+  });
+
+</script>
+
+</html>
