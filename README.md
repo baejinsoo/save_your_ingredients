@@ -1,14 +1,3 @@
----
-title: "냉장고 재료기반 레시피 추천 사이트"
-excerpt: "융복합 프로젝트형 클라우드 서비스 개발"
-categories:
-  - Project
-last_modified_at: 2021-01-22
-toc: true
-toc_sticky: true
-
----
-
 ## Save your Ingredient
 
 - *COVID-19* 상황으로 집에서 요리를 해먹는 빈도수가 많아짐
